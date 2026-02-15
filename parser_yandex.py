@@ -15,16 +15,18 @@ TOKEN = '8572442312:AAHAtRuHOKs0BQwbAAPEgT3cZNt1G1AXP5M'
 bot = Bot(TOKEN)
 dp = Dispatcher()
 
-session = requests.Session()
-
 fake_user = UserAgent().random
 header = {'User-Agent': fake_user,
           'Accept': '*/*',
           'accept-language': 'ru,en-US;q=0.9,en;q=0.8,fr;q=0.7,zh-CN;q=0.6,zh;q=0.5,it;q=0.4'}
 
 proxies = {
-    'http': f'http://5.188.208.229:8000:ycgTUQ:gQhnX6'
+    'http': f'http://ycgTUQ:gQhnX6@5.188.208.229:8000',
+    'https': f'http://ycgTUQ:gQhnX6@5.188.208.229:8000'      
 }
+
+session = requests.Session()
+session.proxies.update(proxies)
 
 @dp.message(Command('start'))
 async def start(message: types.Message):
@@ -129,6 +131,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())   
+
 
 
 
