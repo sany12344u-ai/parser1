@@ -46,7 +46,7 @@ async def text(message: types.Message):
         link = message.text
         responce = session.get(link, headers=header, proxies=proxies).text
 
-        with open('audio.html', 'wb') as file:
+        with open('audio.html', 'w') as file:
           file.write(responce)
         document = FSInputFile('audio.html')
         await message.answer_document(document)      
@@ -129,5 +129,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())   
+
 
 
