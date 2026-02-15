@@ -104,33 +104,44 @@ async def dowload_track(call: types.CallbackQuery):
         await call.answer('⏳ Ищу трек...')
         
         data = call.data.replace('track_', '')
-        
         track_name = data.replace('_', ' ')
         
-        result = EnteredTrack(track_name, 1)
-        link = result.get_url_down[0]
-        print(link)
-        responce = session.get(link, headers=header, timeout=60).content
+        # 1. Ищем трек через поиск на hitmo (или другом сервисе)
+        search_url = f"https://rus.hitmotop.com/search?q={track_name}"
+        search_response = session.get(search_url, headers=header, timeout=60)
+        search_soup = BeautifulSoup(search_response.text, 'lxml')
         
+        # 2. Находим первую ссылку на трек
+        track_link = search_soup.find('div', class_='track__title').find('a')['href']
+        full_track_url = f"https://rus.hitmotop.com{track_link}"
+        
+        # 3. Получаем страницу трека и извлекаем ссылку на скачивание
+        track_page = session.get(full_track_url, headers=header, timeout=60)
+        track_soup = BeautifulSoup(track_page.text, 'lxml')
+        
+        # 4. Находим прямую ссылку на mp3
+        download_link = track_soup.find('a', class_='download')['href']
+        
+        # 5. Скачиваем через твою сессию с прокси
+        mp3_response = session.get(download_link, headers=header, timeout=60).content
+        
+        # 6. Сохраняем
         with open(f'audio/{data}.mp3', 'wb') as file:
-            file.write(responce)
+            file.write(mp3_response)
         
         audio = FSInputFile(f'audio/{data}.mp3')
-        print('Файл готов к отправке')
-        
         await call.message.answer_audio(audio=audio)
-        print('Файл отправлен')
         
-    
     except Exception as e:
         await call.message.answer("К сожалению нам не удалось найти этот трек(")  
-        print(f'Ошибка: {e}')  
+        print(f'Ошибка: {e}')
 
 async def main():
    await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())   
+
 
 
 
