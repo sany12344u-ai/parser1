@@ -140,7 +140,6 @@ async def text(message: types.Message):
             f'<b>👥 Слушателей:</b> {month_listeners}\n\n'
             '<b>🔥 Популярные треки:</b>\n'
             f'<i>{format_track}</i>\n'
-            f'{"" if len(top_tracks) <= 5 else f"\n<i>и ещё {len(top_tracks)-5} треков...</i>"}'
         )
 
         if photo:
@@ -205,3 +204,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
