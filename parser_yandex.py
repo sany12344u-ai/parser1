@@ -106,41 +106,103 @@ async def dowload_track(call: types.CallbackQuery):
         data = call.data.replace('track_', '')
         track_name = data.replace('_', ' ')
         
-        # 1. Ищем трек через поиск на hitmo (или другом сервисе)
-        search_url = f"https://rus.hitmotop.com/search?q={track_name}"
+        # 1. Ищем трек через поиск на hitmotop
+        search_url = f"https://rus.hitmotop.com/search?q={track_name.replace(' ', '+')}"
+        print(f"Поиск: {search_url}")
+        
         search_response = session.get(search_url, headers=header, timeout=60)
         search_soup = BeautifulSoup(search_response.text, 'lxml')
         
-        # 2. Находим первую ссылку на трек
-        track_link = search_soup.find('div', class_='track__title').find('a')['href']
-        full_track_url = f"https://rus.hitmotop.com{track_link}"
+        # Сохраняем для отладки
+        with open(f'search_{data}.html', 'w', encoding='utf-8') as f:
+            f.write(search_response.text)
         
-        # 3. Получаем страницу трека и извлекаем ссылку на скачивание
+        # 2. Пробуем разные селекторы для поиска трека
+        # Вариант 1: ищем по классу track-item
+        track_item = search_soup.find('div', class_='track-item')
+        if not track_item:
+            # Вариант 2: ищем по классу track
+            track_item = search_soup.find('div', class_='track')
+        if not track_item:
+            # Вариант 3: ищем первую ссылку с классом track__title
+            track_item = search_soup.find('a', class_='track__title')
+        
+        if not track_item:
+            print("Трек не найден в результатах поиска")
+            raise Exception("Трек не найден")
+        
+        # Получаем ссылку на трек
+        if track_item.name == 'a':
+            track_link = track_item.get('href')
+        else:
+            track_link = track_item.find('a')['href']
+        
+        if not track_link.startswith('http'):
+            full_track_url = f"https://rus.hitmotop.com{track_link}"
+        else:
+            full_track_url = track_link
+            
+        print(f"Ссылка на трек: {full_track_url}")
+        
+        # 3. Получаем страницу трека
         track_page = session.get(full_track_url, headers=header, timeout=60)
         track_soup = BeautifulSoup(track_page.text, 'lxml')
         
-        # 4. Находим прямую ссылку на mp3
-        download_link = track_soup.find('a', class_='download')['href']
+        # Сохраняем для отладки
+        with open(f'track_{data}.html', 'w', encoding='utf-8') as f:
+            f.write(track_page.text)
         
-        # 5. Скачиваем через твою сессию с прокси
+        # 4. Ищем ссылку на скачивание
+        download_link = None
+        
+        # Вариант 1: ищем кнопку download
+        download_btn = track_soup.find('a', class_='download')
+        if download_btn:
+            download_link = download_btn.get('href')
+        
+        # Вариант 2: ищем аудио плеер
+        if not download_link:
+            audio_tag = track_soup.find('audio')
+            if audio_tag and audio_tag.get('src'):
+                download_link = audio_tag['src']
+        
+        # Вариант 3: ищем ссылку в data-url
+        if not download_link:
+            player_data = track_soup.find('div', {'data-url': True})
+            if player_data:
+                download_link = player_data['data-url']
+        
+        if not download_link:
+            print("Ссылка на скачивание не найдена")
+            raise Exception("Ссылка на скачивание не найдена")
+        
+        print(f"Ссылка на скачивание: {download_link}")
+        
+        # 5. Скачиваем
         mp3_response = session.get(download_link, headers=header, timeout=60).content
         
         # 6. Сохраняем
+        os.makedirs('audio', exist_ok=True)
         with open(f'audio/{data}.mp3', 'wb') as file:
             file.write(mp3_response)
         
         audio = FSInputFile(f'audio/{data}.mp3')
         await call.message.answer_audio(audio=audio)
+        print('Файл отправлен')
         
     except Exception as e:
         await call.message.answer("К сожалению нам не удалось найти этот трек(")  
         print(f'Ошибка: {e}')
+        # Выводим дополнительную информацию для отладки
+        import traceback
+        traceback.print_exc()
 
 async def main():
    await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())   
+
 
 
 
