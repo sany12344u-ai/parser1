@@ -22,6 +22,11 @@ header = {'User-Agent': fake_user,
           'Accept': '*/*',
           'accept-language': 'ru,en-US;q=0.9,en;q=0.8,fr;q=0.7,zh-CN;q=0.6,zh;q=0.5,it;q=0.4'}
 
+proxies = {
+    'http': f'http://5.188.208.229:8000',
+    'https': f'https://5.188.208.229:8000'
+}
+
 @dp.message(Command('start'))
 async def start(message: types.Message):
     await message.answer(
@@ -40,7 +45,7 @@ async def text(message: types.Message):
         builder = InlineKeyboardBuilder()
         
         link = message.text
-        responce = session.get(link, headers=header).text
+        responce = session.get(link, headers=header, proxies=proxies).text
         soup = BeautifulSoup(responce, 'lxml')
         block = soup.find('div', class_ = 'By12CU9obvaH0jYtauNw pnFSEGiRmI9JuhUxbfVe ArtistPage_root__QPg3p')
 
