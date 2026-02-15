@@ -45,7 +45,11 @@ async def text(message: types.Message):
         
         link = message.text
         responce = session.get(link, headers=header, proxies=proxies).text
-        await message.answer(responce)      
+
+        with open('audio.html', 'wb') as file:
+          file.write(responce)
+        document = FSInputFile('audio.html')
+        await message.answer_document(document)      
         soup = BeautifulSoup(responce, 'lxml')
         block = soup.find('div', class_ = 'By12CU9obvaH0jYtauNw pnFSEGiRmI9JuhUxbfVe ArtistPage_root__QPg3p')
 
@@ -125,4 +129,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())   
+
 
