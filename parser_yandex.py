@@ -110,7 +110,7 @@ async def dowload_track(call: types.CallbackQuery):
         result = EnteredTrack(track_name, 1)
         link = result.get_url_down[0]
         print(link)
-        responce = requests.get(link, headers=header, timeout=60).content
+        responce = session.get(link, headers=header, timeout=60).content
         
         with open(f'audio/{data}.mp3', 'wb') as file:
             file.write(responce)
@@ -131,6 +131,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())   
+
 
 
 
